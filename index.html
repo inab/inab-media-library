@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Media Library</title>
+  <title>INAB Media Library</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -56,12 +56,13 @@
 
         for (const item of items) {
           if (item.type === 'file' && (item.name.endsWith('.mp4') || item.name.endsWith('.mov'))) {
-            // Construct the GitHub Pages URL for each video file
-            const githubPagesFileUrl = `${githubPagesUrl}${item.path}`;
+            // Correct the GitHub Pages URL by removing 'docs/' from the path
+            const correctedPath = item.path.replace('docs/', '');
+            const githubPagesFileUrl = `${githubPagesUrl}${correctedPath}`;
             videos.push({
               name: item.name,
               path: item.path,
-              pagesUrl: githubPagesFileUrl // GitHub Pages URL
+              pagesUrl: githubPagesFileUrl // Corrected GitHub Pages URL
             });
           } else if (item.type === 'dir') {
             const nestedVideos = await getAllVideos(item.path);
