@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media Library</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .video-list {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .video-item {
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>INAB Media Library</h1>
+  <div id="videoList" class="video-list">
+    <p>Loading video list...</p>
+  </div>
+
+  <script>
+    const repoOwner = 'inab';
+    const repoName = 'inab-media-library';
+    const repoPath = 'docs/videos';
+    const branch = 'main';
+    const githubPagesUrl = `https://${repoOwner}.github.io/${repoName}/`;
+
+    const videoListContainer = document.getElementById('videoList');
+
+    // Function to fetch the list of files from a specific path in the repo
+    function fetchFiles(path) {
+      const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}?ref=${branch}`;
+      return fetch(apiUrl).then(response => {
+        if (!response.ok) {
+          throw new Error(`Failed to fetch files from path: ${path}`);
+        }
+        return response.json();
+      });
+    }
+
+    // Recursive function to get all video files from nested directories
+    async function getAllVideos(path) {
+      try {
+        const items = await fetchFiles(path);
+        let videos = [];
+
+        for (const item of items) {
+          if (item.type === 'file' && (item.name.endsWith('.mp4') || item.name.endsWith('.mov'))) {
+            // Construct the GitHub Pages URL for each video file
+            const githubPagesFileUrl = `${githubPagesUrl}${item.path}`;
+            videos.push({
+              name: item.name,
+              path: item.path,
+              pagesUrl: githubPagesFileUrl // GitHub Pages URL
+            });
+          } else if (item.type === 'dir') {
+            const nestedVideos = await getAllVideos(item.path);
+            videos = videos.concat(nestedVideos);
+          }
+        }
+        return videos;
+      } catch (error) {
+        console.error('Error fetching video files:', error);
+        return [];
+      }
+    }
+
+    // Display the list of videos in the HTML
+    function displayVideos(videos) {
+      videoListContainer.innerHTML = '';
+      if (videos.length === 0) {
+        videoListContainer.innerHTML = '<p>No videos found in the repository.</p>';
+      } else {
+        videos.forEach(video => {
+          const videoItem = document.createElement('div');
+          videoItem.className = 'video-item';
+
+          const videoLink = document.createElement('a');
+          videoLink.href = video.pagesUrl;
+          videoLink.target = '_blank';
+          videoLink.textContent = video.path.replace(repoPath + '/', '');
+
+          videoItem.appendChild(videoLink);
+          videoListContainer.appendChild(videoItem);
+        });
+      }
+    }
+
+    // Fetch and display all videos in the repository
+    getAllVideos(repoPath)
+      .then(displayVideos)
+      .catch(error => {
+        videoListContainer.innerHTML = '<p>Failed to load video list. Please try again later.</p>';
+        console.error('Error displaying videos:', error);
+      });
+  </script>
+</body>
+</html>
